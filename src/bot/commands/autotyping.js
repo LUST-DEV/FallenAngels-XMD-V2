@@ -1,24 +1,42 @@
 const { User } = require('../../database')
+const logger = require('../../logger')
 
 module.exports = {
   name: 'autotyping',
-  desc: 'Active ou désactive l’indicateur de saisie',
+  desc: 'Enable or disable the typing indicator',
   ownerOnly: true,
-  async run({ args, numero, reply, prefix }) {
+  async run({ args, numero, jid, sock, reply, prefix }) {
     const status = args[0]?.toLowerCase()
     if (!['on', 'off'].includes(status)) {
-      return reply(`> ❌ 𝗨ꜱᴀɢᴇ :  ${prefix}ᴀᴜᴛᴏᴛʏᴘɪɴɢ ᴏɴ ᴏʀ ${prefix}ᴀᴜᴛᴏᴛʏᴘɪɴɢ ᴏꜰꜰ`)
+      return reply(`> ❌ 𝐔sᴀɢᴇ: ${prefix}autotyping on/off`)
     }
 
-    const [updatedUsers] = await User.update(
-      { autotyping: status === 'on' },
-      { where: { numero } },
-    )
+    const user = await User.findByPk(numero, { attributes: ['autotyping'] })
+    if (!user) {
+      throw new Error(`No user found for number: ${numero}.`)
+    }
+    await user.update({ autotyping: status === 'on' })
 
-    if (updatedUsers === 0) {
-      throw new Error(`𝗡ᴏ ᴜsᴇʀ ғᴏᴜɴᴅ ғᴏʀ ᴛʜᴇ ɴᴜᴍʙᴇʀ :  ${numero}.`)
+    if (status === 'on') {
+      let typingStarted = false
+      try {
+        await sock.presenceSubscribe(jid)
+        await sock.sendPresenceUpdate('composing', jid)
+        typingStarted = true
+        await new Promise((resolve) => setTimeout(resolve, 3000))
+      } catch (error) {
+        logger.warn({ numero, jid, err: error.message }, 'unable to show typing indicator after enabling autotyping')
+      } finally {
+        if (typingStarted) {
+          try {
+            await sock.sendPresenceUpdate('paused', jid)
+          } catch (error) {
+            logger.warn({ numero, jid, err: error.message }, 'unable to stop typing indicator after enabling autotyping')
+          }
+        }
+      }
     }
 
-    await reply(`> ⌨️ ᴀᴜᴛᴏ-ᴛʏᴘɪɴɢ : ${status === 'on' ? '𝗘ɴᴀʙʟᴇᴅ  ✅' : '𝗗ɪꜱᴀʙʟᴇᴅ ❌'}`)
+    await reply(`> ⌨️ 𝐀ᴜᴛᴏ-ᴛʏᴘɪɴɢ: ${status === 'on' ? '𝐄ɴᴀʙʟᴇᴅ ✅' : '𝐃ɪsᴀʙʟᴇᴅ ❌'}`)
   },
 }

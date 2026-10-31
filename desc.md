@@ -31,6 +31,8 @@ This is the complete command guide in one file. It can be read as Markdown or re
 | `.demote <member>` | Group admin + bot admin | Removes a member's group-admin role. | Retire le rôle d’admin à un membre. |
 | `.admins` | Group | Lists and mentions the group's admins and owner. | Affiche et mentionne les admins et le propriétaire du groupe. |
 | `.groupinfo` | Group | Shows the group name, member count, creation date and description. | Affiche le nom du groupe, le nombre de membres, la date de création et la description. |
+| `.groupstats` | Group | Shows the group member count, admin count and creation date. | Affiche le nombre de membres, d’admins et la date de création du groupe. |
+| `.topchat [today\|week]` | Group | Shows the ten most active members today or over the last seven UTC dates. Activity tracking starts when this version is deployed. | Affiche les dix membres les plus actifs aujourd’hui ou sur les sept derniers jours UTC. Le suivi commence après le déploiement de cette version. |
 | `.grouplink` | Group admin + bot admin | Shows the current group's WhatsApp invitation link. Treat the link as private: anyone who has it may be able to join. | Affiche le lien d’invitation WhatsApp du groupe actuel. Garde ce lien privé : toute personne qui le possède peut éventuellement rejoindre le groupe. |
 | `.close` | Group admin + bot admin | Restricts sending messages to group admins. | Réserve l’envoi des messages aux admins du groupe. |
 | `.open` | Group admin + bot admin | Allows all group members to send messages again. | Permet de nouveau à tous les membres d’envoyer des messages. |
@@ -76,7 +78,6 @@ Le slowmode est un **délai individuel par membre**, pas un compte à rebours co
 | `.leave` | Owner only, group only | Makes the bot leave the group where the command is sent. | Fait quitter au bot le groupe où la commande est envoyée. |
 | `.setpp` | Owner only | Reply to an image to set the bot's profile picture. | Réponds à une image pour changer la photo de profil du bot. |
 | `.pair +<country code> <number>` | Owner only | Starts a WhatsApp linked-device session and returns a pairing code. Enter the number with `+` and country code; spaces, parentheses and hyphens are accepted. Example: `.pair +1 (415) 555-2671`. | Démarre une session WhatsApp liée et renvoie un code d’association. Saisis le numéro avec `+` et l’indicatif du pays; les espaces, parenthèses et tirets sont acceptés. Exemple : `.pair +1 (415) 555-2671`. |
-| `.addtoken <API key>` | Owner only, private chat | Saves and activates the AI API key. Keep the key secret. | Enregistre et active la clé API de l’IA. Garde cette clé secrète. |
 
 **Owner-only note / Note sur les commandes Owner :** In this bot, the owner is the WhatsApp account running the session. Being a group administrator alone does not grant owner access.
 
@@ -90,10 +91,24 @@ Le slowmode est un **délai individuel par membre**, pas un compte à rebours co
 | `.play <song or YouTube URL>`, `.song <song or YouTube URL>` | Searches for a song and sends its cover, title, artist, duration, source link and audio. Both commands do the same thing. | Recherche une chanson et envoie sa pochette, son titre, son artiste, sa durée, son lien source et son audio. Les deux commandes font la même chose. |
 | `.8d`, `.nightcore`, `.reverse`, `.slowed`, `.speedup` | Reply to an audio message to apply the named effect and receive the processed audio. | Réponds à un audio pour appliquer l’effet choisi et recevoir l’audio transformé. |
 | `.stickers` | Reply to an image or video to turn it into a sticker. | Réponds à une image ou une vidéo pour la transformer en sticker. |
+| `.sign <name>` | Attach an image or reply to one to create a sticker with the name written on it. | Joins une image ou réponds à une image pour créer un sticker avec le nom écrit dessus. |
+| `.brightness [0-3]` | Adjust image brightness; the default is `1.25` and `1` preserves the original. | Ajuste la luminosité; la valeur par défaut est `1.25` et `1` conserve l’originale. |
+| `.contrast [0-3]` | Adjust image contrast; the default is `1.5` and `1` preserves the original. | Ajuste le contraste; la valeur par défaut est `1.5` et `1` conserve l’original. |
+| `.grayscale` | Convert an attached or quoted image to grayscale. | Convertit une image jointe ou citée en niveaux de gris. |
+| `.mirror` | Flip an attached or quoted image horizontally. | Retourne horizontalement une image jointe ou citée. |
+| `.pixelate [2-64]` | Pixelate an image; the optional number sets the pixel-block size (default `16`). | Pixellise une image; le nombre facultatif règle la taille des blocs (défaut : `16`). |
+| `.caption <text>` | Add a caption overlay to an attached or quoted image. | Ajoute un texte incrusté sur une image jointe ou citée. |
+| `.sepia` | Apply a warm sepia tone to an attached or quoted image. | Applique un ton sépia chaud à une image jointe ou citée. |
+| `.invert` | Invert the colors of an attached or quoted image. | Inverse les couleurs d’une image jointe ou citée. |
+| `.sharpen [0.3-3]` | Sharpen image details; the default strength is `1.2`. | Accentue les détails; la force par défaut est `1.2`. |
+| `.vintage` | Apply a warm, softly desaturated vintage look to an attached or quoted image. | Applique un effet vintage chaud et légèrement désaturé à une image jointe ou citée. |
+| `.saturate [0-10]` | Attach an image or reply to one to adjust its color saturation. The default is `2`; use `1` to preserve the original saturation. | Joins une image ou réponds à une image pour ajuster sa saturation. La valeur par défaut est `2`; utilise `1` pour conserver la saturation d’origine. |
 | `.toimg` | Reply to an image to resend it, or to a sticker to convert it to PNG. | Réponds à une image pour la renvoyer, ou à un sticker pour le convertir en PNG. |
 | `.tovideo` | Reply to a video to resend it, or to an animated sticker to convert it to MP4. | Réponds à une vidéo pour la renvoyer, ou à un sticker animé pour le convertir en MP4. |
+| `.togif` | Attach a video with the command or reply to a video to convert its first 10 seconds to a GIF (up to 16 MB). | Joins une vidéo avec la commande ou réponds à une vidéo pour convertir ses 10 premières secondes en GIF (jusqu’à 16 Mo). |
 | `.removebg` | Attach an image or reply to an image/sticker to remove its background. Requires `REMOVE_BG_API_KEY` in `.env`. | Joins une image ou réponds à une image/un sticker pour enlever l’arrière-plan. Nécessite `REMOVE_BG_API_KEY` dans `.env`. |
 | `.wallpaper <search>` | Finds and sends a wallpaper from Wikimedia Commons, with source and license details. | Recherche et envoie un fond d’écran de Wikimedia Commons avec sa source et sa licence. |
+| `.imagine <description>` | Generates an image with Gemini. Requires `GEMINI_API_KEY`; optional model setting: `GEMINI_IMAGE_MODEL`. | Génère une image avec Gemini. Nécessite `GEMINI_API_KEY`; modèle facultatif : `GEMINI_IMAGE_MODEL`. |
 | `.tiktok <URL>` | Downloads a TikTok video. | Télécharge une vidéo TikTok. |
 | `.getpp [number/mention]` | Fetches a contact's public profile photo; without a target, uses the bot account. | Récupère la photo de profil publique d’un contact; sans cible, utilise le compte du bot. |
 | `.qr <text or URL>` | Creates a QR-code image from text or a link. | Crée une image de code QR à partir d’un texte ou d’un lien. |

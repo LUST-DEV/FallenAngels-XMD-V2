@@ -1,4 +1,6 @@
 const { mentionedParticipants, participantNumber } = require('../groupUtils')
+const { downloadImage } = require('../imageUtils')
+const logger = require('../../logger')
 
 module.exports = {
   name: 'profile',
@@ -22,9 +24,40 @@ module.exports = {
     const name = target === (msg.key.participant || jid) && msg.pushName
       ? msg.pushName
       : participantNumber(target)
-    await sock.sendMessage(jid, {
-      text: `👤 𝐏ʀᴏғɪʟᴇ\n✦ Nᴀᴍᴇ: ${name}\n✦ 𝐍ᴜᴍʙᴇʀ: +${participantNumber(target)}\n✦ 𝐑ᴏʟᴇ: ${role}`,
-      mentions: targets.length ? [target] : [],
+    const text = `👤 𝐏ʀᴏғɪʟᴇ\n✦ Nᴀᴍᴇ: ${name}\n✦ 𝐍ᴜᴍʙᴇʀ: +${participantNumber(target)}\n✦ 𝐑ᴏʟᴇ: ${role}`
+    let image
+    try {
+      const pictureUrl = await sock.profilePictureUrl(target, 'image')
+      image = await downloadImage(pictureUrl)
+    } catch (error) {
+      logger.warn({ jid, target, err: error.message }, 'unable to load profile picture for profile command')
+    }
+
+    if (image) {
+      await sock.sendMessage(jid, {
+        image,
+        caption: text,
+        mentions: targets.length ? [target] : [],
+      }, { quoted: msg })
+    } else {
+      await sock.sendMessage(jid, {
+        text,
+        mentions: targets.length ? [target] : [],
+      }, { quoted: msg })
+    }
+
+    const { sendButtons } = await import('baileys_helpers')
+    return sendButtons(sock, jid, {
+      title: 'Profile',
+      text: 'Copy this contact ID:',
+      footer: name,
+      buttons: [{
+        name: 'cta_copy',
+        buttonParamsJson: JSON.stringify({
+          display_text: 'Copy ID',
+          copy_code: target,
+        }),
+      }],
     }, { quoted: msg })
   },
 }

@@ -38,6 +38,25 @@ function parseWhatsAppLink(input) {
   return null
 }
 
+async function sendCopyableId(sock, msg, jid, lines, value, buttonLabel = 'Copy ID') {
+  const payload = formatIdCard(lines)
+  if (!value) return sock.sendMessage(jid, { text: payload }, { quoted: msg })
+
+  const { sendButtons } = await import('baileys_helpers')
+  return sendButtons(sock, jid, {
+    title: 'WhatsApp ID details',
+    text: payload,
+    footer: 'Tap the button below to copy this ID.',
+    buttons: [{
+      name: 'cta_copy',
+      buttonParamsJson: JSON.stringify({
+        display_text: buttonLabel,
+        copy_code: value,
+      }),
+    }],
+  }, { quoted: msg })
+}
+
 module.exports = {
   name: 'id',
   desc: 'Show WhatsApp JIDs for this chat, a contact, group, or channel link',
@@ -57,12 +76,13 @@ module.exports = {
     if (link?.type === 'group') {
       try {
         const group = await sock.groupGetInviteInfo(link.code)
-        return reply(formatIdCard([
+        const jidValue = group.id || 'Unavailable'
+        return sendCopyableId(sock, msg, jid, [
           '𝐓ʏᴘᴇ ➪ 𝐆ʀᴏᴜᴘ',
           `𝐍ᴀᴍᴇ ➪ ${group.subject || 'Unknown'}`,
-          `𝐉𝐈𝐃 ➪ ${group.id || 'Unavailable'}`,
+          `𝐉𝐈𝐃 ➪ ${jidValue}`,
           `𝐌ᴇᴍʙᴇʀs ➪ ${group.participants?.length ?? 'Unknown'}`,
-        ]))
+        ], group.id)
       } catch (error) {
         return reply(`> ❌ 𝐂ᴏᴜʟᴅ ɴᴏᴛ ʀᴇᴀᴅ ᴛʜᴇ ɢʀᴏᴜᴘ ɪɴᴠɪᴛᴇ ʟɪɴᴋ: ${error.message}`)
       }
@@ -72,12 +92,12 @@ module.exports = {
       try {
         const channel = await sock.newsletterMetadata('invite', link.code)
         if (!channel?.id) throw new Error('Channel details were not returned.')
-        return reply(formatIdCard([
+        return sendCopyableId(sock, msg, jid, [
           '𝐓ʏᴘᴇ ➪ 𝐂ʜᴀɴɴᴇʟ',
           `𝐍ᴀᴍᴇ ➪ ${channel.name || 'Unknown'}`,
           `𝐉𝐈𝐃 ➪ ${channel.id}`,
           `𝐒ᴜʙsᴄʀɪʙᴇʀs ➪ ${channel.subscribers ?? 'Unknown'}`,
-        ]))
+        ], channel.id)
       } catch (error) {
         return reply(`> ❌ 𝐂ᴏᴜʟᴅ ɴᴏᴛ ʀᴇᴀᴅ ᴛʜᴇ ᴄʜᴀɴɴᴇʟ ɪɴᴠɪᴛᴇ ʟɪɴᴋ: ${error.message}`)
       }
@@ -86,76 +106,78 @@ module.exports = {
     if (input.endsWith('@g.us')) {
       try {
         const group = await sock.groupMetadata(input)
-        return reply(formatIdCard([
+        return sendCopyableId(sock, msg, jid, [
           '𝐓ʏᴘᴇ ➪ 𝐆ʀᴏᴜᴘ',
           `𝐍ᴀᴍᴇ ➪ ${group.subject || 'Unknown'}`,
           `𝐉𝐈𝐃 ➪ ${input}`,
           `𝐌ᴇᴍʙᴇʀs ➪ ${group.participants?.length ?? 'Unknown'}`,
-        ]))
+        ], input)
       } catch {
-        return reply(formatIdCard(['𝐓ʏᴘᴇ ➪ 𝐆ʀᴏᴜᴘ', `𝐉𝐈𝐃 ➪ ${input}`]))
+        return sendCopyableId(sock, msg, jid, ['𝐓ʏᴘᴇ ➪ 𝐆ʀᴏᴜᴘ', `𝐉𝐈𝐃 ➪ ${input}`], input)
       }
     }
 
     if (input.endsWith('@newsletter')) {
       try {
         const channel = await sock.newsletterMetadata('jid', input)
-        return reply(formatIdCard([
+        return sendCopyableId(sock, msg, jid, [
           '𝐓ʏᴘᴇ ➪ 𝐂ʜᴀɴɴᴇʟ',
           `𝐍ᴀᴍᴇ ➪ ${channel?.name || 'Unknown'}`,
           `𝐉𝐈𝐃 ➪ ${input}`,
           `𝐒ᴜʙsᴄʀɪʙᴇʀs ➪ ${channel?.subscribers ?? 'Unknown'}`,
-        ]))
+        ], input)
       } catch (error) {
         return reply(`> ❌ 𝐂ᴏᴜʟᴅ ɴᴏᴛ ʀᴇᴀᴅ ᴛʜᴇ ᴄʜᴀɴɴᴇʟ: ${error.message}`)
       }
     }
 
     if (input.endsWith('@s.whatsapp.net') || input.endsWith('@lid')) {
-      return reply(formatIdCard([
+      return sendCopyableId(sock, msg, jid, [
         `𝐓ʏᴘᴇ ➪ ${input.endsWith('@lid') ? '𝐋ɪɴᴋᴇᴅ 𝐈ᴅ' : '𝐂ᴏɴᴛᴀᴄᴛ'}`,
         `𝐉𝐈𝐃 ➪ ${input}`,
-      ]))
+      ], input)
     }
 
     if (/^\+?\d{7,15}$/.test(input)) {
       const phoneNumber = input.replace(/\D/g, '')
-      return reply(formatIdCard([
+      const contactJid = `${phoneNumber}@s.whatsapp.net`
+      return sendCopyableId(sock, msg, jid, [
         '𝐓ʏᴘᴇ ➪ 𝐂ᴏɴᴛᴀᴄᴛ',
         `𝐍ᴜᴍʙᴇʀ ➪ +${phoneNumber}`,
-        `𝐉𝐈𝐃 ➪ ${phoneNumber}@s.whatsapp.net`,
-      ]))
+        `𝐉𝐈𝐃 ➪ ${contactJid}`,
+      ], contactJid)
     }
 
     const quotedJid = getQuotedJid(msg)
     if (quotedJid) {
-      return reply(formatIdCard([
+      return sendCopyableId(sock, msg, jid, [
         '𝐓ʏᴘᴇ ➪ 𝐑ᴇᴘʟɪᴇᴅ 𝐂ᴏɴᴛᴀᴄᴛ',
         `𝐉𝐈𝐃 ➪ ${quotedJid}`,
-      ]))
+      ], quotedJid)
     }
 
     if (jid?.endsWith('@g.us')) {
       try {
         const group = await sock.groupMetadata(jid)
-        return reply(formatIdCard([
+        return sendCopyableId(sock, msg, jid, [
           '𝐓ʏᴘᴇ ➪ 𝐆ʀᴏᴜᴘ',
           `𝐍ᴀᴍᴇ ➪ ${group.subject || 'Unknown'}`,
           `𝐉𝐈𝐃 ➪ ${jid}`,
           `𝐌ᴇᴍʙᴇʀs ➪ ${group.participants?.length ?? 'Unknown'}`,
-        ]))
+        ], jid)
       } catch {
-        return reply(formatIdCard(['𝐓ʏᴘᴇ ➪ 𝐆ʀᴏᴜᴘ', `𝐉𝐈𝐃 ➪ ${jid}`]))
+        return sendCopyableId(sock, msg, jid, ['𝐓ʏᴘᴇ ➪ 𝐆ʀᴏᴜᴘ', `𝐉𝐈𝐃 ➪ ${jid}`], jid)
       }
     }
 
     if (jid?.endsWith('@newsletter')) {
-      return reply(formatIdCard(['𝐓ʏᴘᴇ ➪ 𝐂ʜᴀɴɴᴇʟ', `𝐉𝐈𝐃 ➪ ${jid}`]))
+      return sendCopyableId(sock, msg, jid, ['𝐓ʏᴘᴇ ➪ 𝐂ʜᴀɴɴᴇʟ', `𝐉𝐈𝐃 ➪ ${jid}`], jid)
     }
 
-    return reply(formatIdCard([
+    const contactJid = msg.key.fromMe ? sock.user?.id || jid : msg.key.participant || jid
+    return sendCopyableId(sock, msg, jid, [
       '𝐓ʏᴘᴇ ➪ 𝐂ᴏɴᴛᴀᴄᴛ',
-      `𝐉𝐈𝐃 ➪ ${msg.key.fromMe ? sock.user?.id || jid : msg.key.participant || jid}`,
-    ]))
+      `𝐉𝐈𝐃 ➪ ${contactJid}`,
+    ], contactJid)
   },
 }

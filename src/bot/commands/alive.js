@@ -32,19 +32,15 @@ module.exports = {
     const time = new Intl.DateTimeFormat('en-US', { timeStyle: 'medium' }).format(new Date())
 
     const caption = [
-      '╭─❮ 𓆩 𝐅ᴀʟʟᴇɴ 𝐗 𝐀ɴɢᴇʟs 𓆪 ❯',
-      '│',
-      '│ 🟢 𝐒ᴛᴀᴛᴜs      ➤ 𝐎ɴʟɪɴᴇ',
-      `│ ⚡ 𝐑ᴇsᴘᴏɴsᴇ   ➤ ${speedText}`,
-      `│ ⏱️ 𝐔ᴘᴛɪᴍᴇ      ➤ ${uptime}`,
-      `│ 🕒 𝐋ᴏᴄᴀʟ 𝐓ɪᴍᴇ ➤ ${time}`,
-      '├────────────────────────',
-      `│ 🖥️ 𝐂ᴘᴜ 𝐔sᴀɢᴇ  ➤ ${usageText}`,
-      `│ ⌛ 𝐂ᴘᴜ 𝐓ɪᴍᴇ   ➤ ${formatCpuTime(cpuTime.user + cpuTime.system)}`,
-      `│ ✦ 𝐁ᴏᴛ     ➤ ${config.botName}`,
-      '│',
-      '╰─❮ 𝐒ʏsᴛᴇᴍ 𝐎ᴘᴇʀᴀᴛɪᴏɴᴀʟ ❯',
-    ].join('\n')
+  '╭─❮ 𓆩 𝐅ᴀʟʟᴇɴ 𝐗 𝐀ɴɢᴇʟs 𓆪 ❯',
+  `│ ⚡️ 𝐒ᴛᴀᴛᴜs  ➤ ${speedText}`,
+  `│ ⏱️ 𝐔ᴘᴛɪᴍᴇ ➤ ${uptime}`,
+  `│ 🕐 𝐓ɪᴍᴇ   ➤ ${time}`,
+  `│ 🖥 𝐂𝐏𝐔    ➤ ${usageText}`,
+  `│ 🤖 𝐁ᴏᴛ    ➤ ${config.botName}`,
+  '╰─❮ ⸸ 𝐎ɴʟɪɴᴇ ⸸ ❯',
+].join('\n')
+
 
     return sendBanner(sock, jid, msg, caption, 'alive')
   },

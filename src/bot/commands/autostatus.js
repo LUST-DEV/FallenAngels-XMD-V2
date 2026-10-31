@@ -13,9 +13,9 @@ module.exports = {
     const [action, value] = args.map((arg) => arg.toLowerCase())
     if (!action) {
       return reply(
-        '╭─❮ 𓆩 𝗔ᴜᴛᴏ 𝗦ᴛᴀᴛᴜs 𓆪 ❯\n' +
-        `│ 🝐 𝗩ɪᴇᴡ ➪ ${user.autostatus ? '𝗢ɴ' : '𝗢ғғ'}\n` +
-        `│ ⸸ 𝗥ᴇᴀᴄᴛ ➪ ${user.autoreact ? '𝗢ɴ' : '𝗢ғғ'}\n` +
+        '╭─❮ 𓆩 𝐀ᴜᴛᴏ 𝐒ᴛᴀᴛᴜs 𓆪 ❯\n' +
+        `│ 🝐 𝐕ɪᴇᴡ ➪ ${user.autostatus ? '𝐎ɴ' : '𝐎ғғ'}\n` +
+        `│ ⸸ 𝐑ᴇᴀᴄᴛ ➪ ${user.autoreact ? '𝐎ɴ' : '𝐎ғғ'}\n` +
         '╰─────────────────────────\n' +
         `\n𓆩 ${prefix}autostatus on/off\n𓆩 ${prefix}autostatus react on/off`,
       )
@@ -25,8 +25,8 @@ module.exports = {
       const enabled = action === 'on'
       await user.update({ autostatus: enabled })
       return reply(
-        `╭─❮ 🝐 𝗔ᴜᴛᴏ 𝗦ᴛᴀᴛᴜs ❯\n` +
-        `│ ⸸ 𝗔ᴜᴛᴏ-𝗩ɪᴇᴡ ➪ ${enabled ? '𝗘ɴᴀʙʟᴇᴅ' : '𝗗ɪsᴀʙʟᴇᴅ'}\n` +
+        `╭─❮ 🝐 𝐀ᴜᴛᴏ 𝐒ᴛᴀᴛᴜs ❯\n` +
+        `│ ⸸ 𝐀ᴜᴛᴏ-𝐕ɪᴇᴡ ➪ ${enabled ? '𝐄ɴᴀʙʟᴇᴅ' : '𝐃ɪsᴀʙʟᴇᴅ'}\n` +
         '╰─────────────────────────',
       )
     }
@@ -35,14 +35,14 @@ module.exports = {
       const enabled = value === 'on'
       await user.update({ autoreact: enabled })
       return reply(
-        `╭─❮ 🝐 𝗔ᴜᴛᴏ 𝗦ᴛᴀᴛᴜs ❯\n` +
-        `│ ⸸ 𝗦ᴛᴀᴛᴜs 𝗥ᴇᴀᴄᴛ ➪ ${enabled ? '𝗘ɴᴀʙʟᴇᴅ 💚' : '𝗗ɪsᴀʙʟᴇᴅ'}\n` +
+        `╭─❮ 🝐 𝐀ᴜᴛᴏ 𝐒ᴛᴀᴛᴜs ❯\n` +
+        `│ ⸸ 𝐒ᴛᴀᴛᴜs 𝐑ᴇᴀᴄᴛ ➪ ${enabled ? '𝐄ɴᴀʙʟᴇᴅ 💚' : '𝐃ɪsᴀʙʟᴇᴅ'}\n` +
         '╰─────────────────────────',
       )
     }
 
     return reply(
-      `╭─❮ ⸸ 𝗜ɴᴠᴀʟɪᴅ 𝗢ᴘᴛɪᴏɴ ❯\n` +
+      `╭─❮ ⸸ 𝐈ɴᴠᴀʟɪᴅ 𝐎ᴘᴛɪᴏɴ ❯\n` +
       `│ 🝓 ${prefix}autostatus on/off\n` +
       `│ 🝓 ${prefix}autostatus react on/off\n` +
       '╰─────────────────────────',

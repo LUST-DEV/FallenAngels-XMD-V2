@@ -14,7 +14,7 @@ Fallen-angels-xmd/
 │   │   └── models/
 │   │       ├── User.js       # numero, country, prefix, status, autotyping
 │   │       ├── CommandLog.js # numero, command, createdAt
-│   │       └── GroupSetting.js # welcome/goodbye settings per group
+│   │       └── GroupSetting.js # welcome/goodbye settings and per-group shipping cooldown
 │   │
 │   ├── bot/
 │   │   ├── sessionManager.js # Map des sockets, start / stop / restore

@@ -1,111 +1,27 @@
-const { downloadContentFromMessage, normalizeMessageContent } = require('@whiskeysockets/baileys')
 const logger = require('../../logger')
-
-async function downloadMedia(message, type) {
-  const stream = await downloadContentFromMessage(message, type)
-  const chunks = []
-  for await (const chunk of stream) chunks.push(chunk)
-  return Buffer.concat(chunks)
-}
-
-function quotedText(message) {
-  return (
-    message?.conversation ||
-    message?.extendedTextMessage?.text ||
-    message?.imageMessage?.caption ||
-    message?.videoMessage?.caption ||
-    ''
-  )
-}
-
-function wait(ms) {
-  return new Promise((resolve) => setTimeout(resolve, ms))
-}
+const { getStoryContent, sendStoryToGroup } = require('../groupStories')
 
 module.exports = {
   name: 'gstories',
-  aliases: ['gstatut'],
-  desc: 'Partage un texte ou un média dans tous les groupes (propriétaire)',
+  desc: 'Share a status in the current group (owner)',
   ownerOnly: true,
   async run({ sock, msg, args, reply }) {
-    const quotedMessage = msg.message?.extendedTextMessage?.contextInfo?.quotedMessage
-    const quotedContent = quotedMessage ? normalizeMessageContent(quotedMessage) : null
-    const text = args.join(' ').trim() || quotedText(quotedContent).trim()
-    const mediaEntry = quotedContent && [
-      ['imageMessage', 'image'],
-      ['videoMessage', 'video'],
-      ['audioMessage', 'audio'],
-    ].find(([key]) => quotedContent[key])
-
-    if (!text && !mediaEntry) {
-      return reply('> ❌ 𝐀ᴅᴅ ᴛᴇxᴛ ᴏʀ ʀᴇᴘʟʏ ᴛᴏ ᴀɴ ɪᴍᴀɢᴇ, ᴠɪᴅᴇᴏ, ᴏʀ ᴀᴜᴅɪᴏ ғɪʟᴇ.')
+    const story = await getStoryContent(msg, args)
+    if (!story) {
+      return reply('> ❌ 𝐀ᴅᴅ ᴛᴇxᴛ ᴏʀ ʀᴇᴘʟʏ ᴛᴏ ᴀɴ ɪᴍᴀɢᴇ, ᴠɪᴅᴇᴏ, ᴏʀ ᴀᴜᴅɪᴏ.')
     }
 
-    let media
-    let mediaType
-    if (mediaEntry) {
-      const [messageKey, type] = mediaEntry
-      mediaType = type
-      media = await downloadMedia(quotedContent[messageKey], mediaType)
+    const groupId = msg.key.remoteJid
+    if (!groupId?.endsWith('@g.us')) {
+      return reply('> ❌ 𝐔sᴇ ᴛʜɪs ᴄᴏᴍᴍᴀɴᴅ ɪɴ ᴀ ɢʀᴏᴜᴘ.')
     }
 
-    let groups
     try {
-      groups = await sock.groupFetchAllParticipating()
+      await sendStoryToGroup(sock, groupId, story)
+      return reply('> ✅ 𝐒ᴛᴀᴛᴜs sᴇɴᴛ ᴛᴏ ᴛʜɪs ɢʀᴏᴜᴘ.')
     } catch (error) {
-      logger.error({ err: error.message }, '𝐔ɴᴀʙʟᴇ ᴛᴏ ʀᴇᴛʀɪᴇᴠᴇ ᴛʜᴇ ɢʀᴏᴜᴘ ʟɪsᴛ.')
-      return reply('> ❌ 𝐔ɴᴀʙʟᴇ ᴛᴏ ʀᴇᴛʀɪᴇᴠᴇ ᴛʜᴇ ɢʀᴏᴜᴘ ʟɪsᴛ. ᴘʟᴇᴀsᴇ ᴛʀʏ ᴀɢᴀɪɴ ʟᴀᴛᴇʀ.')
+      logger.error({ groupId, err: error.message }, 'gstories failed for current group')
+      return reply('> ❌ 𝐅ᴀɪʟᴇᴅ ᴛᴏ sᴇɴᴅ ᴛʜᴇ sᴛᴀᴛᴜs ᴛᴏ ᴛʜɪs ɢʀᴏᴜᴘ.')
     }
-
-    const groupIds = Object.keys(groups)
-    if (groupIds.length === 0) return reply('> 𝐍ᴏ ɢʀᴏᴜᴘs ᴀᴠᴀɪʟᴀʙʟᴇ ғᴏʀ ᴛʜɪs ᴅᴇᴠɪᴄᴇ')
-
-    await reply(`> 🚀 ꜱᴇɴᴅɪɴɢ ᴛʜᴇ ꜱᴛᴏʀʏ ɪɴ ${groupIds.length} ɢʀᴏᴜᴘ…`)
-
-    let successCount = 0
-    const failures = []
-
-    for (const groupId of groupIds) {
-      try {
-        const metadata = await sock.groupMetadata(groupId)
-        const participants = metadata.participants.map((participant) => participant.id)
-        const contextInfo = {
-          mentionedJid: participants,
-          isGroupStatus: true,
-        }
-        const options = { statusJidList: participants }
-        let content
-
-        if (!media) {
-          content = {
-            text,
-            backgroundColor: '#000000',
-            contextInfo,
-          }
-        } else if (mediaType === 'image') {
-          content = { image: media, caption: text, contextInfo }
-        } else if (mediaType === 'video') {
-          content = { video: media, caption: text, contextInfo }
-        } else {
-          content = { audio: media, mimetype: 'audio/mp4', ptt: false, contextInfo }
-        }
-
-        await sock.sendMessage(groupId, content, options)
-        if (mediaType === 'audio' && text) {
-          await sock.sendMessage(groupId, { text, contextInfo }, options)
-        }
-        successCount++
-      } catch (error) {
-        failures.push(groupId)
-        logger.warn({ groupId, err: error.message }, 'échec de gstories pour un groupe')
-      }
-
-      if (successCount + failures.length < groupIds.length) await wait(2000)
-    }
-
-    const failureSummary = failures.length
-      ? `\n❌ Échecs : ${failures.length} groupe(s).`
-      : ''
-    await reply(`> ✅ Sᴛᴏʀɪᴇs ꜱᴇɴᴛ ɪɴ  ${successCount}/${groupIds.length} ɢʀᴏᴜᴘꜱ(s).${failureSummary}`)
   },
 }

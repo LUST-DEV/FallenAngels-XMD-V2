@@ -88,7 +88,7 @@ async function fetchSongBuffer(videoUrl) {
 
 module.exports = {
   name: 'song',
-  aliases: ['play', 'music', 'ytmp3', 'downloadsong'],
+  aliases: ['music', 'ytmp3', 'downloadsong'],
   desc: 'Download a YouTube song with metadata, cover image, and audio',
   async run({ sock, msg, jid, args, reply }) {
     const query = args.join(' ').trim()

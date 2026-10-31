@@ -1,373 +1,145 @@
 <div align="center">
 
-# 𓆩 𝐅ᴀʟʟᴇɴ 𝐗 𝐀ɴɢᴇʟs 𓆪
+<img src="./public/images/fallen-angels.png" alt="Fallen X Angels project artwork" width="720">
 
-### 𝐀 𝐃ᴀʀᴋ 𝐖ʜᴀᴛs𝐀ᴘᴘ 𝐀ᴜᴛᴏᴍᴀᴛɪᴏɴ 𝐄ɴɢɪɴᴇ
+# Fallen X Angels
 
-<img src="https://files.catbox.moe/8d4uhu.jpg" alt="Fallen X Angels Bot" width="720">
+<img src="./public/images/readme-typing.svg" alt="WhatsApp automation, built for real communities">
 
-<br>
+<p>
+  <a href="https://nodejs.org/"><img src="https://img.shields.io/badge/Node.js-20%2B-339933?style=flat-square&logo=node.js&logoColor=white" alt="Node.js 20 or newer"></a>
+  <a href="https://www.whatsapp.com/"><img src="https://img.shields.io/badge/WhatsApp-Baileys-25D366?style=flat-square&logo=whatsapp&logoColor=white" alt="WhatsApp powered by Baileys"></a>
+  <img src="https://img.shields.io/badge/Database-SQLite-003B57?style=flat-square&logo=sqlite&logoColor=white" alt="SQLite database">
+  <img src="https://img.shields.io/badge/License-ISC-64748B?style=flat-square" alt="ISC license">
+</p>
 
-[![WhatsApp](https://img.shields.io/badge/WhatsApp-Baileys-25D366?style=for-the-badge&logo=whatsapp&logoColor=white)](https://www.whatsapp.com/)
-[![Node.js](https://img.shields.io/badge/Node.js-Runtime-339933?style=for-the-badge&logo=node.js&logoColor=white)](https://nodejs.org/)
-[![JavaScript](https://img.shields.io/badge/JavaScript-Core-F7DF1E?style=for-the-badge&logo=javascript&logoColor=black)](https://developer.mozilla.org/en-US/docs/Web/JavaScript)
-[![Status](https://img.shields.io/badge/Status-Active-8B0000?style=for-the-badge)](#)
+<p>
+  A modular WhatsApp bot for group administration, media workflows, AI tools, and a secure session dashboard.
+</p>
 
 </div>
 
 ---
 
-## ╭─❮ 𓆩 𝐀ʙᴏᴜᴛ 𝐓ʜᴇ 𝐏ʀᴏᴊᴇᴄᴛ 𓆪 ❯
+## Overview
 
-**Fallen X Angels** is a dark-themed WhatsApp automation bot built with
-**Node.js** and **Baileys**.
+Fallen X Angels is a Node.js WhatsApp automation project built on Baileys. It combines group management, media and sticker utilities, AI integrations, and personal productivity commands in a dynamically loaded command system.
 
-It combines group management, media tools, anime utilities, music commands,
-AI assistance and developer-oriented utilities inside one modular system.
+The project also includes a web dashboard for managing linked sessions and viewing activity. The dashboard is protected by an administrator password.
 
-> 𝐍ᴏ ʟɪɢʜᴛ ᴄᴀɴ ᴘᴇɴᴇᴛʀᴀᴛᴇ ᴛʜᴇsᴇ ᴡᴀʟʟs.
+## Features
 
----
+| Area | Capabilities |
+| --- | --- |
+| Group management | Group information, invite links, polls, rules, welcome messages, join approvals, member moderation, and slow mode |
+| Media | Audio downloads, image effects, sticker creation, video conversions, QR codes, and public media tools |
+| AI | Claude, Gemini, Groq, and Mistral chat providers; Gemini image generation |
+| Utilities | Translation, reminders, notes, to-do lists, weather, lookups, and text tools |
+| Dashboard | Session status, usage statistics, activity charts, and session controls |
+| Operations | SQLite persistence, structured logs, configurable prefix, and multiple WhatsApp sessions |
 
-## ╭─❮ 🝐 𝐂ᴏʀᴇ 𝐅ᴇᴀᴛᴜʀᴇs 🝐 ❯
+See the [command guide](./desc.md) for usage, examples, access requirements, and API-dependent features.
 
-### 🛡️ 𝐆ʀᴏᴜᴘ 𝐌ᴏᴅᴇʀᴀᴛɪᴏɴ
+## Requirements
 
-- Welcome and goodbye system
-- Group information and status
-- Admin list
-- Tag all members
-- Hidden tag
-- Promote and demote members
-- Add and remove members
-- Open and close groups
-- Group invitation link
-- Rules management
-- Poll creation
-- Message deletion
-- Anti-reaction module
+- Node.js 20 or newer
+- npm
+- A WhatsApp account to link to the bot
+- API keys only for the optional integrations you plan to use
 
-### 🎵 𝐌ᴜsɪᴄ & 𝐌ᴇᴅɪᴀ
+## Quick start
 
-- YouTube audio downloader
-- Song search
-- Lyrics search
-- TikTok video downloader
-- Image and video utilities
-- Sticker tools
-- View-once media handling
-- QR code generation
-- URL shortener
-- Media metadata display
+### 1. Install dependencies
 
-### 🎌 𝐀ɴɪᴍᴇ 𝐙ᴏɴᴇ
+```powershell
+npm ci
+```
 
-- Anime search
-- Anime information
-- Random anime quotes
-- Character information
-- Anime poster display
-- Genre, score and episode details
+### 2. Configure the environment
 
-### 🧠 𝐀ssɪsᴛᴀɴᴛ & 𝐔ᴛɪʟɪᴛɪᴇs
+```powershell
+Copy-Item .env.example .env
+```
 
-- AI assistant
-- Translation commands
-- Weather information
-- Wikipedia search
-- Country information
-- Mathematical calculator
-- DNS lookup
-- GitHub user search
-- NPM package inspector
-- Crypto price lookup
-- System telemetry
+Edit `.env` and set a unique, high-entropy `ADMIN_PASSWORD`. Keep this file and your WhatsApp session data private.
 
-### ⚙️ 𝐒ʏsᴛᴇᴍ & 𝐎ᴡɴᴇʀ
+The default prefix is `.`. You can change it with `DEFAULT_PREFIX`.
 
-- Dynamic command loader
-- Owner-only commands
-- Public and private bot modes
-- Configurable prefix
-- Pairing code authentication
-- Command logs
-- Auto-typing indicator
-- Modular command architecture
-- Error logging
-- Multi-session support
+### 3. Start the application
 
----
-
-## ╭─❮ ⸸ 𝐒ʏsᴛᴇᴍ 𝐈ɴғᴏ ⸸ ❯
-
-| Component | Technology |
-|---|---|
-| Runtime | Node.js |
-| WhatsApp Engine | Baileys |
-| Language | JavaScript |
-| Database | SQLite / Sequelize |
-| Authentication | Pairing Code |
-| Architecture | Modular Commands |
-| API Style | REST APIs |
-| Theme | Dark Gothic |
-
----
-
-## ╭─❮ 𓆩 𝐐ᴜɪᴄᴋ 𝐂ᴏᴍᴍᴀɴᴅs 𓆪 ❯
-text
-
-.menu                 Display the main menu
-
-.ping                 Check bot latency and system status
-
-.about                Display bot information
-
-.devinfo              Get the developer's Telegram link
-
-.runtime              Display bot uptime
-
-.ram                  Display memory usage
-
-.ai <question>        Ask the AI assistant
-
-.anime         Search for an anime<br>
-.animequote           Get an anime quote<br>
-.song <query>         Download a song<br>
-.lyrics <query>       Search for lyrics<br>
-.tiktok <url>         Download a TikTok video<br>
-.translate <lang>     Translate a message<br>
-.weather <city>       Display weather information<br>
-.wiki <subject>       Search Wikipedia<br>
-.country <country>    Display country information<br>
-.calc <expression>    Calculate an expression<br>
-.dns <domain>         Resolve DNS records<br>
-.gituser <username>   Search a GitHub profile<br>
-.npm <package>        Inspect an NPM package<br>
-.qr <text>            Generate a QR code</p>
-
----
-
-## ╭─❮ 🝐 𝐆ʀᴏᴜᴘ 𝐂ᴏᴍᴍᴀɴᴅs 🝐 ❯
-
-text
-
-.group open           Open the group
-
-.group close          Close the group
-
-.group info           Display group information
-
-.groupstatus          Display group settings
-
-.admins               Mention group administrators
-
-.tagall      Mention all members
-
-.hidetag     Mention silently
-
-.welcome on           Enable welcome messages
-
-.welcome off          Disable welcome messages
-
-.goodbye on           Enable goodbye messages
-
-.goodbye off          Disable goodbye messages
-
-.setrules       Set group rules
-
-.rules                Display group rules
-
-.grouplink            Get the group invitation link
-
----
-
-## ╭─❮ ⚔️ 𝐏ᴀɪʀɪɴɢ 𝐂ᴏᴅᴇ 𝐒ᴇᴛᴜᴘ ⚔️ ❯
-
-Fallen X Angels uses a **pairing code** instead of a QR code.
-
-bash
-
-git clone https://github.com/seniors-angels/Fallen-X-Angels.git
-
-cd Fallen-angels-xmd
-
-npm install
-
-Create a `.env` file:
-
-env
-
-OWNER_NUMBER=225000000000
-
-PREFIX=.
-
-NODE_ENV=production
-
-Start the bot:
-
-bash
-
+```powershell
 npm start
+```
 
-Or in development mode:
+On first launch, follow the terminal prompts to link the WhatsApp account using the displayed pairing code. In WhatsApp, open **Settings → Linked Devices → Link a Device → Link with phone number** and enter the code.
 
-bash
+### 4. Open the dashboard
 
-npm run dev
+Visit `http://localhost:3000/dashboard` (or the configured `PORT`) and authenticate with `ADMIN_PASSWORD`.
 
-The terminal will ask for your WhatsApp number and display a pairing code.
+## Optional integrations
 
-On WhatsApp:
+Add only the keys for features you intend to use. Do not send API keys in group chats or commit them to source control.
 
-Settings
+| Environment variable | Used for |
+| --- | --- |
+| `ANTHROPIC_API_KEY` | Claude chat commands |
+| `GEMINI_API_KEY` | Gemini chat and `.imagine` image generation |
+| `GROQ_API_KEY` | Groq chat commands |
+| `MISTRAL_API_KEY` | Mistral chat commands |
+| `REMOVE_BG_API_KEY` | `.removebg` background removal |
+| `TELEGRAM_BOT_TOKEN` | Telegram sticker-pack import |
 
-→ Linked Devices
+Optional model settings include `CLAUDE_MODEL`, `GEMINI_MODEL`, `GEMINI_IMAGE_MODEL`, `GROQ_MODEL`, and `MISTRAL_MODEL`. Other deployment settings, such as `PORT`, `DATA_DIR`, `DATABASE_PATH`, and `SESSIONS_DIR`, are documented in [`.env.example`](./.env.example).
 
-→ Link a Device
+## Deployment
 
-→ Link with phone number instead
+The included `Dockerfile` and [`railway.json`](./railway.json) configure a Railway deployment. Set `ADMIN_PASSWORD` in the service variables and attach a persistent volume mounted at `/data`; the container stores the SQLite database and WhatsApp sessions there. Railway supplies `PORT` automatically. For another Docker host, also mount persistent storage at `/data`.
 
-→ Enter the pairing code
+## Project layout
 
----
+```text
+src/
+  bot/
+    commands/       Dynamically loaded bot commands
+    sessionManager.js
+    messageHandler.js
+  database/
+    models/         Sequelize models and SQLite persistence
+  server/           Express dashboard and API
+  utils/            Shared media and application utilities
+public/
+  images/           Dashboard, menu, and README artwork
+  assets/           Bot media assets
+desc.md             Full command guide
+index.js            Application entry point
+```
 
-## ╭─❮ 🝐 𝐏ʀᴏᴊᴇᴄᴛ 𝐒ᴛʀᴜᴄᴛᴜʀᴇ 🝐 ❯
+## Development
 
-text
+Commands are loaded from `src/bot/commands`. Follow the existing command-module patterns and add new user-facing commands to the relevant menu category and `desc.md`.
 
-fallen-x-angels/
+Run the production entry point with:
 
-├── commands/
+```powershell
+npm start
+```
 
-│   ├── general/
+The package does not currently define a test or development-watch script.
 
-│   ├── group/
+## Security
 
-│   ├── media/
+- Set a strong `ADMIN_PASSWORD` before starting the application.
+- Treat `.env`, linked-device credentials, and session directories as secrets.
+- Configure API keys through your private environment or deployment variables, never in chat.
+- Be considerate with group-wide actions and comply with WhatsApp's terms and applicable laws.
 
-│   ├── anime/
+## Community
 
-│   ├── owner/
+- [Official WhatsApp channel](https://whatsapp.com/channel/0029VbDvjLfE50UqjuQXVJ1m)
+- [WhatsApp support channel](https://whatsapp.com/channel/0029VbCiqwyBVJl3Jv5T4I15)
+- [Telegram community](https://t.me/+a61RXuTFGH85ZjAx)
 
-│   └── fun/
+## License
 
-├── handlers/
-
-│   ├── messageHandler.js
-
-│   ├── commandHandler.js
-
-│   └── commands.js
-
-├── database/
-
-│   ├── index.js
-
-│   ├── models/
-
-│   └── migrations/
-
-├── utils/
-
-│   ├── formatters.js
-
-│   ├── downloader.js
-
-│   └── validators.js
-
-├── auth_session/
-
-├── config.js
-
-├── logger.js
-
-├── index.js
-
-├── package.json
-
-└── README.md
-
----
-
-## ╭─❮ 𓆩 𝐂ʜᴀɴɴᴇʟ & 𝐂ᴏᴍᴍᴜɴɪᴛʏ 𓆪 ❯
-
-Follow the official channel for:
-
-- New command releases
-- Bot updates
-- Maintenance announcements
-- Pairing information
-- New features
-- Community news
-
-### 𝐎ғғɪᴄɪᴀʟ 𝐖ʜᴀᴛsAᴘᴘ 𝐂ʜᴀɴɴᴇʟs
-
-
-<div align="center">
-
-[𓆩 𝐉ᴏɪɴ 𝐓ʜᴇ 𝐎ғғɪᴄɪᴀʟ 𝐂ʜᴀɴɴᴇʟ 𓆪](https://whatsapp.com/channel/0029VbDvjLfE50UqjuQXVJ1m)
-
-</div>
-
-<div align="center">
-
-[𓆩 𝐉ᴏɪɴ 𝐓ʜᴇ 𝐎ғғɪᴄɪᴀʟ Support 𓆪](https://whatsapp.com/channel/0029VbCiqwyBVJl3Jv5T4I15)
-
-</div>
-
-### 𝐎ғғɪᴄɪᴀʟ 𝐓ᴇʟᴇɢʀᴀᴍ 𝐂ʜᴀɴɴᴇʟ
-
-<div align="center">
-
-[![Telegram](https://img.shields.io/badge/Telegram-Join%20Our%20Channel-26A5E4?style=for-the-badge&logo=telegram&logoColor=white)](https://t.me/+a61RXuTFGH85ZjAx)
-
-[𓆩 𝐉ᴏɪɴ 𝐓ʜᴇ 𝐓ᴇʟᴇɢʀᴀᴍ 𝐂ʜᴀɴɴᴇʟ 𓆪](https://t.me/+a61RXuTFGH85ZjAx)
-
-</div>
-
-
-<div align="center">
-
-[![Telegram](https://img.shields.io/badge/Telegram-Join%20Our%20Channel-26A5E4?style=for-the-badge&logo=telegram&logoColor=white)](https://t.me/+a61RXuTFGH85ZjAx)
-
-[𓆩 𝐉ᴏɪɴ 𝐓ʜᴇ 𝐓ᴇʟᴇɢʀᴀᴍ 𝐂ʜᴀɴɴᴇʟ 𓆪](https://t.me/SavageHackZzzzzzzzzzzzzzzzzz777)
-
-</div>
-
----
-
-## ╭─❮ ⸸ 𝐃ɪsᴄʟᴀɪᴍᴇʀ ⸸ ❯
-
-This project is intended for educational and personal automation purposes.
-
-Do not use the bot for:
-
-- Spam
-- Harassment
-- Unauthorized access
-- Mass messaging
-- Privacy violations
-- Malicious automation
-
-Respect WhatsApp's Terms of Service and the privacy of other users.
-
----
-
-## ╭─❮ 𓆩 𝐂ʀᴇᴅɪᴛs 𓆪 ❯
-
-
-> Project       : Fallen X Angels
-
-> Architecture  : Modular WhatsApp Automation
-
-> Engine        : Baileys
-
-> Theme         : Dark Gothic
-
-> Maintainer    : Senior's Angels
-
-## Dashboard configuration
-
-Create a local `.env` from `.env.example` and set a unique, high-entropy `ADMIN_PASSWORD`. Keep `.env` and WhatsApp session files private; they are excluded from Git. Configure API tokens only when using their corresponding features.
-
-Install dependencies with `npm ci`, then start the application with `npm start`. The dashboard is served by the application and requires `ADMIN_PASSWORD` to be set.
+This project is distributed under the [ISC License](./LICENSE).

@@ -1,6 +1,21 @@
-Born to die
+========================================
+      WELCOME TO FALLEN X ANGELS
+========================================
 
-POWERED BY: Senior's Angels Devlopper
-POWERED BY : LUST DEVLOPPER
+Thanks for downloading this repository!
+
+Fallen X Angels is a WhatsApp bot built with Node.js and Baileys. It includes
+group tools, media commands, AI integrations, and a web dashboard.
+
+GETTING STARTED
+1. Read README.md for installation and setup instructions.
+2. Copy .env.example to .env and configure your settings.
+3. Set a strong ADMIN_PASSWORD before starting the bot.
+4. Run npm ci, then npm start.
+
+Keep your .env file, API keys, and WhatsApp session data private.
+
+Enjoy using Fallen X Angels!
 
 
+Made By Senior's Anges devlopper 

@@ -2,7 +2,7 @@ const config = require('./src/config')
 const logger = require('./src/logger')
 const { sequelize, syncDatabase } = require('./src/database')
 const app = require('./src/server/app')
-const { restoreSessions } = require('./src/bot/sessionManager')
+const { restoreSessions, stopAllSessions } = require('./src/bot/sessionManager')
 
 async function start() {
   if (!config.adminPassword) {
@@ -19,14 +19,20 @@ async function start() {
 
   const shutdown = async () => {
     server.close()
+    await stopAllSessions()
     await sequelize.close()
   }
-  process.once('SIGINT', shutdown)
-  process.once('SIGTERM', shutdown)
+  process.once('SIGINT', () => shutdown().catch((error) => {
+    logger.error({ err: error }, 'Échec de l’arrêt du bot')
+    process.exitCode = 1
+  }))
+  process.once('SIGTERM', () => shutdown().catch((error) => {
+    logger.error({ err: error }, 'Échec de l’arrêt du bot')
+    process.exitCode = 1
+  }))
 }
 
 start().catch((error) => {
   logger.error({ err: error }, 'Impossible de démarrer le bot')
   process.exitCode = 1
 });
-

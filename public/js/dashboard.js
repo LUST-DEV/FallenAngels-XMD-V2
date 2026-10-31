@@ -1,6 +1,6 @@
 const message = document.querySelector('#dashboard-message')
-const chartColors = ['#20201d', '#55554f', '#85857d', '#aaa9a1', '#c8c8c1', '#72726b']
 const charts = {}
+let latestStats = null
 
 function showError(error) {
   message.textContent = error.message
@@ -39,6 +39,38 @@ async function restartConnections(url, confirmMessage, button, all = false) {
   }
 }
 
+async function disconnectConnections(url, confirmMessage, button, all = false) {
+  if (!window.confirm(confirmMessage)) return
+
+  button.disabled = true
+  message.textContent = ''
+  message.classList.remove('error')
+  try {
+    const response = await fetch(url, { method: 'POST' })
+    const result = await response.json()
+    if (response.status === 401) {
+      window.location.replace('/')
+      return
+    }
+    if (!response.ok) throw new Error(result.error || 'Unable to disconnect the session.')
+
+    if (all) {
+      const failed = result.failed || []
+      message.textContent = failed.length
+        ? `Disconnected ${result.disconnected} session(s); failed: ${failed.map((item) => item.numero).join(', ')}.`
+        : `Disconnected ${result.disconnected} session(s).`
+      if (failed.length) message.classList.add('error')
+    } else {
+      message.textContent = `Disconnected ${result.numero}. The saved account can be restarted later.`
+    }
+    await loadDashboard()
+  } catch (error) {
+    showError(error)
+  } finally {
+    button.disabled = false
+  }
+}
+
 function cell(row, value, className) {
   const td = document.createElement('td')
   td.textContent = value ?? ''
@@ -60,15 +92,18 @@ function createCharts(stats) {
   for (const chart of Object.values(charts)) chart.destroy()
   for (const key of Object.keys(charts)) delete charts[key]
 
-  const gridColor = 'rgba(30, 30, 26, 0.08)'
-  const tickColor = '#74746e'
+  const styles = getComputedStyle(document.documentElement)
+  const color = (name) => styles.getPropertyValue(name).trim()
+  const chartColors = [1, 2, 3, 4, 5, 6].map((index) => color(`--chart-segment-${index}`))
+  const gridColor = color('--chart-grid')
+  const tickColor = color('--chart-tick')
   Chart.defaults.font.family = '"Segoe UI", Arial, sans-serif'
   const tooltip = {
-    backgroundColor: '#20201d',
-    borderColor: '#deded9',
+    backgroundColor: color('--chart-tooltip'),
+    borderColor: color('--chart-tooltip-border'),
     borderWidth: 1,
-    titleColor: '#ffffff',
-    bodyColor: '#e1e1dc',
+    titleColor: color('--chart-tooltip-title'),
+    bodyColor: color('--chart-tooltip-text'),
     padding: 12,
     displayColors: true,
     boxPadding: 5,
@@ -83,10 +118,10 @@ function createCharts(stats) {
       ctx.save()
       ctx.textAlign = 'center'
       ctx.textBaseline = 'middle'
-      ctx.fillStyle = '#20201d'
+      ctx.fillStyle = color('--chart-center')
       ctx.font = '700 25px "Segoe UI", Arial, sans-serif'
       ctx.fillText(value, x, y - 7)
-      ctx.fillStyle = '#777772'
+      ctx.fillStyle = color('--chart-center-label')
       ctx.font = '500 9px "Segoe UI", Arial, sans-serif'
       ctx.letterSpacing = '1.5px'
       ctx.fillText(label, x, y + 13)
@@ -101,14 +136,14 @@ function createCharts(stats) {
       datasets: [{
         label: 'Commands',
         data: stats.activity.map((point) => point.count),
-        borderColor: '#22221f',
+        borderColor: color('--chart-line'),
         backgroundColor: (context) => {
           const { chart } = context
           const { ctx, chartArea } = chart
-          if (!chartArea) return 'rgba(30, 30, 26, 0.08)'
+          if (!chartArea) return color('--chart-line-fill')
           const gradient = ctx.createLinearGradient(0, chartArea.top, 0, chartArea.bottom)
-          gradient.addColorStop(0, 'rgba(30, 30, 26, 0.14)')
-          gradient.addColorStop(1, 'rgba(30, 30, 26, 0)')
+          gradient.addColorStop(0, color('--chart-line-fill'))
+          gradient.addColorStop(1, 'rgba(0, 0, 0, 0)')
           return gradient
         },
         fill: true,
@@ -116,8 +151,8 @@ function createCharts(stats) {
         borderWidth: 2.5,
         pointRadius: 0,
         pointHoverRadius: 5,
-        pointHoverBackgroundColor: '#22221f',
-        pointHoverBorderColor: '#ffffff',
+        pointHoverBackgroundColor: color('--chart-line'),
+        pointHoverBorderColor: color('--chart-border'),
         pointHoverBorderWidth: 3,
       }],
     },
@@ -159,7 +194,7 @@ function createCharts(stats) {
         datasets: [{
           data: stats.commands.map((item) => Number(item.count)),
           backgroundColor: chartColors,
-          borderColor: '#ffffff',
+          borderColor: color('--chart-border'),
           borderWidth: 4,
           hoverOffset: 8,
           borderRadius: 5,
@@ -188,8 +223,8 @@ function createCharts(stats) {
       labels: ['CPU', 'Memory', 'Disk'],
       datasets: [{
         data: ['cpu', 'ram', 'disk'].map((key) => Math.min(100, Math.max(0, Number(stats.system[key])))),
-        backgroundColor: ['#22221f', '#777772', '#c8c8c1'],
-        borderColor: '#ffffff',
+        backgroundColor: [chartColors[0], chartColors[2], chartColors[4]],
+        borderColor: color('--chart-border'),
         borderWidth: 4,
         hoverOffset: 7,
         borderRadius: 5,
@@ -220,7 +255,7 @@ function createCharts(stats) {
         datasets: [{
           data: countryRows.map((entry) => entry.count),
           backgroundColor: countryRows.map((_, index) => chartColors[index % chartColors.length]),
-          borderColor: '#ffffff',
+          borderColor: color('--chart-border'),
           borderWidth: 4,
           hoverOffset: 8,
           borderRadius: 5,
@@ -261,6 +296,7 @@ async function loadDashboard() {
   if (!statsResponse.ok || !usersResponse.ok) throw new Error('Unable to load dashboard data.')
 
   const [stats, users] = await Promise.all([statsResponse.json(), usersResponse.json()])
+  latestStats = stats
   document.querySelector('#users-count').textContent = stats.users
   document.querySelector('#online-count').textContent = stats.online
   document.querySelector('#logs-count').textContent = stats.logs
@@ -268,6 +304,10 @@ async function loadDashboard() {
   document.querySelector('#cpu').textContent = `${stats.system.cpu.toFixed(1)} %`
   document.querySelector('#ram').textContent = `${stats.system.ram.toFixed(1)} %`
   document.querySelector('#disk').textContent = `${stats.system.disk.toFixed(1)} %`
+  document.querySelector('#cpu-detail').textContent = `${stats.system.cpu.toFixed(1)} %`
+  document.querySelector('#ram-detail').textContent = `${stats.system.ram.toFixed(1)} %`
+  document.querySelector('#disk-detail').textContent = `${stats.system.disk.toFixed(1)} %`
+  document.querySelector('#uptime-detail').textContent = stats.system.uptime
   createCharts(stats)
 
   const usersTable = document.querySelector('#users-table')
@@ -276,6 +316,10 @@ async function loadDashboard() {
     const row = usersTable.insertRow()
     cell(row, 'No users', 'empty').colSpan = 6
   }
+
+  document.addEventListener('dashboard-theme-change', () => {
+    if (latestStats) createCharts(latestStats)
+  })
   for (const user of users) {
     const row = usersTable.insertRow()
     cell(row, user.numero)
@@ -297,11 +341,11 @@ async function loadDashboard() {
       restart,
     ))
     const remove = document.createElement('button')
-    remove.className = 'danger-button'
+    remove.className = 'danger-button remove-session-button'
     remove.type = 'button'
-    remove.textContent = 'Remove'
+    remove.textContent = 'Delete'
     remove.addEventListener('click', async () => {
-      if (!window.confirm(`Disconnect and remove ${user.numero}?`)) return
+      if (!window.confirm(`Disconnect ${user.numero} and permanently delete its saved account and command logs?`)) return
       remove.disabled = true
       try {
         const response = await fetch(`/api/users/${encodeURIComponent(user.numero)}`, { method: 'DELETE' })
@@ -318,7 +362,17 @@ async function loadDashboard() {
         remove.disabled = false
       }
     })
-    actions.append(restart, remove)
+    const disconnect = document.createElement('button')
+    disconnect.className = 'danger-button'
+    disconnect.type = 'button'
+    disconnect.textContent = 'Disconnect'
+    disconnect.disabled = !user.online
+    disconnect.addEventListener('click', () => disconnectConnections(
+      `/api/users/${encodeURIComponent(user.numero)}/disconnect`,
+      `Disconnect ${user.numero} from WhatsApp? The saved account will be kept.`,
+      disconnect,
+    ))
+    actions.append(restart, disconnect, remove)
     actionCell.append(actions)
   }
 
@@ -340,6 +394,15 @@ document.querySelector('#restart-all').addEventListener('click', (event) => {
   restartConnections(
     '/api/users/restart-all',
     'Restart every linked WhatsApp session? Connections may be briefly offline.',
+    event.currentTarget,
+    true,
+  )
+})
+
+document.querySelector('#disconnect-all').addEventListener('click', (event) => {
+  disconnectConnections(
+    '/api/users/disconnect-all',
+    'Disconnect every active WhatsApp session? Saved accounts will be kept.',
     event.currentTarget,
     true,
   )

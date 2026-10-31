@@ -21,6 +21,11 @@ module.exports = (sequelize) => sequelize.define('GroupSetting', {
     defaultValue: 0,
     validate: { min: 0, max: 3600 },
   },
+  shippingNextAt: {
+    type: DataTypes.DATE,
+    allowNull: true,
+    defaultValue: null,
+  },
   autoAcceptEnabled: {
     type: DataTypes.BOOLEAN,
     allowNull: false,

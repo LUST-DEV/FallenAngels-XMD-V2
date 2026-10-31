@@ -12,12 +12,15 @@ const {
 
 const config = require('../config')
 const logger = require('../logger')
-const { User, GroupSetting } = require('../database')
+const { User, GroupSetting, GroupActivity } = require('../database')
 const { sendParticipantNotice } = require('./groupMessages')
 const { moderateGroupMessage } = require('./antiLink')
 const { enforceGroupSlowmode } = require('./slowmode')
+const { handleStatusMessage } = require('./statusHandler')
+const { schedulePendingReminders, cancelScheduledReminders } = require('./reminderScheduler')
 
 const sessions = new Map() // numero -> socket
+const sessionStartOperations = new Map()
 const reconnectTimers = new Map()
 const reconnectAttempts = new Map()
 const restartOperations = new Map()
@@ -35,6 +38,21 @@ function hasRegisteredAuth(numero) {
   } catch (error) {
     logger.error({ numero, err: error }, 'impossible de lire les identifiants WhatsApp')
     throw new Error(`Unable to read WhatsApp credentials for ${numero}.`, { cause: error })
+  }
+}
+
+async function stopAllSessions() {
+  const startingSessions = [...sessionStartOperations.values()]
+  if (startingSessions.length) {
+    await Promise.allSettled(startingSessions)
+  }
+
+  for (const numero of new Set([
+    ...sessions.keys(),
+    ...reconnectTimers.keys(),
+    ...sessionStartOperations.keys(),
+  ])) {
+    await stopSession(numero)
   }
 }
 
@@ -126,6 +144,21 @@ function isPermanentAuthFailure(code) {
 }
 
 async function startSession(numero) {
+  const pending = sessionStartOperations.get(numero)
+  if (pending) return pending
+
+  const operation = startSessionInternal(numero)
+  sessionStartOperations.set(numero, operation)
+  try {
+    return await operation
+  } finally {
+    if (sessionStartOperations.get(numero) === operation) {
+      sessionStartOperations.delete(numero)
+    }
+  }
+}
+
+async function startSessionInternal(numero) {
   // Session déjà active ?
   if (sessions.has(numero)) {
     const old = sessions.get(numero)
@@ -141,7 +174,7 @@ async function startSession(numero) {
   }
 
   const { version } = await fetchLatestBaileysVersion()
-  const baileysLogger = logger.child({ level: 'warn' })
+  const baileysLogger = logger.child({}, { level: 'warn' })
 
   const sock = makeWASocket({
     version,
@@ -184,6 +217,9 @@ async function startSession(numero) {
       reconnectAttempts.delete(numero)
       await updateConnectionStatus(numero, 'connected')
       logger.info({ numero }, 'session connectée ✅')
+      schedulePendingReminders(numero, sock).catch((error) => {
+        logger.error({ numero, err: error }, 'failed to schedule saved reminders')
+      })
       followNewsletterOnce(numero, sock).catch((error) => {
         logger.error(
           { numero, newsletterJid: config.whatsappNewsletterJid, err: error },
@@ -194,11 +230,22 @@ async function startSession(numero) {
 
     if (connection === 'close') {
       if (sock.stopped || sessions.get(numero) !== sock) return // arrêt volontaire ou ancien socket
+      cancelScheduledReminders(numero)
       sessions.delete(numero)
 
       const code = lastDisconnect?.error?.output?.statusCode
       const registered = sock.authState.creds.registered
       const disconnectError = lastDisconnect?.error
+
+      if (code === DisconnectReason.connectionReplaced) {
+        reconnectAttempts.delete(numero)
+        await updateConnectionStatus(numero, 'disconnected')
+        logger.warn(
+          { numero, code },
+          'WhatsApp session was replaced by another connection; stop the other bot instance before reconnecting',
+        )
+        return
+      }
 
       if (isPermanentAuthFailure(code)) {
         removeAuth(numero)
@@ -226,9 +273,10 @@ async function startSession(numero) {
   })
 
   sock.ev.on('messages.upsert', async ({ messages, type }) => {
-    if (type !== 'notify') return
+    const statusMessages = messages.filter((msg) => msg.key.remoteJid === 'status@broadcast')
+    if (type !== 'notify' && statusMessages.length === 0) return
     let privateMode = false
-    if (messages.some((msg) => msg.message && !msg.key.fromMe)) {
+    if (type === 'notify' && messages.some((msg) => msg.message && !msg.key.fromMe)) {
       try {
         const user = await User.findByPk(numero, { attributes: ['botMode'] })
         privateMode = user?.botMode === 'private'
@@ -241,27 +289,10 @@ async function startSession(numero) {
     for (const msg of messages) {
       const jid = msg.key.remoteJid
       const isStatus = jid === 'status@broadcast'
+      if (type !== 'notify' && !isStatus) continue
 
       if (isStatus && !msg.key.fromMe) {
-        try {
-          const user = await User.findByPk(numero, {
-            attributes: ['autostatus', 'autoreact'],
-          })
-
-          if (user?.autostatus && msg.key.id) {
-            await sock.readMessages([msg.key])
-          }
-
-          if (user?.autoreact && msg.key.id && msg.key.participant) {
-            await sock.sendMessage(
-              'status@broadcast',
-              { react: { text: '💚', key: msg.key } },
-              { statusJidList: [msg.key.participant] },
-            )
-          }
-        } catch (error) {
-          logger.error({ numero, jid, err: error.message }, 'échec de l’auto-lecture ou réaction au statut')
-        }
+        await handleStatusMessage(sock, numero, msg)
       }
 
       if (!msg.key.fromMe && !isStatus && msg.message && msg.key.id) {
@@ -278,6 +309,19 @@ async function startSession(numero) {
       if (!msg.message || (privateMode && !msg.key.fromMe)) continue
 
       if (jid?.endsWith('@g.us')) {
+        const participantJid = msg.key.participant || msg.key.participantAlt
+        if (!msg.key.fromMe && participantJid) {
+          try {
+            const activityDate = new Date().toISOString().slice(0, 10)
+            const [activity] = await GroupActivity.findOrCreate({
+              where: { groupJid: jid, participantJid, activityDate },
+              defaults: { messageCount: 0 },
+            })
+            await activity.increment('messageCount')
+          } catch (error) {
+            logger.error({ numero, jid, participantJid, err: error.message }, 'failed to record group message activity')
+          }
+        }
         try {
           await moderateGroupMessage(sock, msg)
         } catch (error) {
@@ -367,6 +411,7 @@ async function startSession(numero) {
 }
 
 async function stopSession(numero, { logout = false } = {}) {
+  cancelScheduledReminders(numero)
   const reconnectTimer = reconnectTimers.get(numero)
   if (reconnectTimer) clearTimeout(reconnectTimer)
   reconnectTimers.delete(numero)
@@ -487,4 +532,12 @@ async function restoreSessions() {
   logger.info(`${i} session(s) à restaurer`)
 }
 
-module.exports = { sessions, startSession, stopSession, restartSession, restartAllSessions, restoreSessions }
+module.exports = {
+  sessions,
+  startSession,
+  stopSession,
+  stopAllSessions,
+  restartSession,
+  restartAllSessions,
+  restoreSessions,
+}

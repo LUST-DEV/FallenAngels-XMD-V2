@@ -3,6 +3,7 @@ const path = require('node:path')
 const { GroupSetting, GroupWarning } = require('../database')
 const { getGroupContext, mentionedParticipants, participantJid, participantNumber, sameJid } = require('./groupUtils')
 const { clearGroupSlowmode } = require('./slowmode')
+const { downloadImage } = require('./imageUtils')
 const logger = require('../logger')
 const config = require('../config')
 
@@ -231,12 +232,60 @@ async function groupinfo({ sock, msg, reply }) {
   const groupJid = msg.key.remoteJid
   if (!groupJid?.endsWith('@g.us')) return reply('> Tʜɪs ᴄᴏᴍᴍᴀɴᴅ ᴍᴜsᴛ ʙᴇ ᴜsᴇᴅ ɪɴ ᴀ ɢʀᴏᴜᴘ.')
   const metadata = await sock.groupMetadata(groupJid)
-  return reply(
+  const text =
     `✦ 𝐆ʀᴏᴜᴘ: ${metadata.subject || 'Unknown'}\n` +
     `✦ 𝐌ᴇᴍʙᴇʀs: ${metadata.participants?.length || 0}\n` +
     `✦ 𝐂ʀᴇᴀᴛᴇᴅ: ${metadata.creation ? new Date(metadata.creation * 1000).toLocaleDateString('en-US') : 'Unknown'}\n` +
-    `✦ 𝐃ᴇsᴄʀɪᴘᴛɪᴏɴ: ${metadata.desc || '𝐍o description.'}`,
-  )
+    `✦ 𝐃ᴇsᴄʀɪᴘᴛɪᴏɴ: ${metadata.desc || '𝐍o description.'}`
+
+  let image
+  try {
+    const pictureUrl = await sock.profilePictureUrl(groupJid, 'image')
+    image = await downloadImage(pictureUrl)
+  } catch (error) {
+    logger.warn({ groupJid, err: error.message }, 'unable to load group profile picture')
+  }
+
+  if (image) {
+    await sock.sendMessage(groupJid, { image, caption: text }, { quoted: msg })
+  } else {
+    await sock.sendMessage(groupJid, { text }, { quoted: msg })
+  }
+
+  const { sendButtons } = await import('baileys_helpers')
+  return sendButtons(sock, groupJid, {
+    title: 'Group information',
+    text: 'Copy the group ID:',
+    footer: metadata.subject || 'WhatsApp group',
+    buttons: [{
+      name: 'cta_copy',
+      buttonParamsJson: JSON.stringify({
+        display_text: 'Copy group ID',
+        copy_code: groupJid,
+      }),
+    }],
+  }, { quoted: msg })
+}
+
+async function groupstats({ sock, msg, reply }) {
+  const groupJid = msg.key.remoteJid
+  if (!groupJid?.endsWith('@g.us')) return reply('> This command must be used inside a WhatsApp group.')
+  const metadata = await sock.groupMetadata(groupJid)
+  const participants = metadata.participants || []
+  const admins = participants.filter((participant) =>
+    participant.admin === 'admin' || participant.admin === 'superadmin',
+  ).length
+  const created = metadata.creation
+    ? new Date(metadata.creation * 1000).toLocaleDateString('en-US')
+    : 'Unknown'
+  return reply([
+    '╭─❮ 𓆩 Group Statistics 𓆪 ❯',
+    `│ ✦ Name: ${metadata.subject || 'Unknown'}`,
+    `│ ✦ Members: ${participants.length}`,
+    `│ ✦ Admins: ${admins}`,
+    `│ ✦ Created: ${created}`,
+    '╰─────────────────────────',
+  ].join('\n'))
 }
 
 async function admins({ sock, msg, reply }) {
@@ -276,7 +325,20 @@ async function grouplink({ sock, msg, reply }) {
         return reply('> ❌ Cᴏᴜʟᴅ ɴᴏᴛ ɢᴇᴛ ᴛʜᴇ ɢʀᴏᴜᴘ ɪɴᴠɪᴛᴇ ʟɪɴᴋ.')
       }
 
-      return reply(`> 🔗 𝐆ʀᴏᴜᴘ 𝐈ɴᴠɪᴛᴇ 𝐋ɪɴᴋ\nhttps://chat.whatsapp.com/${inviteCode}`)
+      const link = `https://chat.whatsapp.com/${inviteCode}`
+      const { sendButtons } = await import('baileys_helpers')
+      return sendButtons(sock, msg.key.remoteJid, {
+        title: '🔗 Group invite link',
+        text: link,
+        footer: 'Use the button to copy the invite link.',
+        buttons: [{
+          name: 'cta_copy',
+          buttonParamsJson: JSON.stringify({
+            display_text: 'Copy link',
+            copy_code: link,
+          }),
+        }],
+      }, { quoted: msg })
     } catch (error) {
       logger.warn({ groupJid, err: error.message }, 'failed to get group invite link')
       return reply('> ❌ Cᴏᴜʟᴅ ɴᴏᴛ ɢᴇᴛ ᴛʜᴇ ɢʀᴏᴜᴘ ɪɴᴠɪᴛᴇ ʟɪɴᴋ. Cʜᴇᴄᴋ ᴛʜᴇ ʙᴏᴛ’s ᴀᴅᴍɪɴ ᴘᴇʀᴍɪssɪᴏɴs ᴀɴᴅ ᴛʀʏ ᴀɢᴀɪɴ.')
@@ -569,6 +631,7 @@ module.exports = {
   close,
   demote,
   groupinfo,
+  groupstats,
   grouplink,
   goodbye: (context) => setGroupMode('goodbye', context),
   hidetag: ({ sock, msg, args, reply }) => withAdmin(sock, msg, reply, {}, ({ groupJid }) => {

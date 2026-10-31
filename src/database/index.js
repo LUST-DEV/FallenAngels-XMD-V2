@@ -17,7 +17,11 @@ const User = require('./models/User')(sequelize);
 const CommandLog = require('./models/CommandLog')(sequelize);
 const GroupSetting = require('./models/GroupSetting')(sequelize)
 const GroupWarning = require('./models/GroupWarning')(sequelize)
+const GroupActivity = require('./models/GroupActivity')(sequelize)
 const AfkStatus = require('./models/AfkStatus')(sequelize)
+const UserTodo = require('./models/UserTodo')(sequelize)
+const UserNote = require('./models/UserNote')(sequelize)
+const Reminder = require('./models/Reminder')(sequelize)
 
 
 User.hasMany(CommandLog, {
@@ -32,6 +36,19 @@ CommandLog.belongsTo(User, {
     targetKey: 'numero',
 
 });
+
+for (const model of [UserTodo, UserNote, Reminder]) {
+    User.hasMany(model, {
+        foreignKey: {name: 'numero', allowNull: false},
+        sourceKey: 'numero',
+        onDelete: 'CASCADE'
+    })
+    model.belongsTo(User, {
+        foreignKey: {name: 'numero', allowNull: false},
+        targetKey: 'numero'
+    })
+}
+
 
 async function syncDatabase() {
     await sequelize.sync()
@@ -120,6 +137,7 @@ async function syncDatabase() {
         antilinkEnabled: { type: DataTypes.BOOLEAN, allowNull: false, defaultValue: false },
         rules: { type: DataTypes.TEXT, allowNull: false, defaultValue: '' },
         slowmodeSeconds: { type: DataTypes.INTEGER, allowNull: false, defaultValue: 0 },
+        shippingNextAt: { type: DataTypes.DATE, allowNull: true, defaultValue: null },
         autoAcceptEnabled: { type: DataTypes.BOOLEAN, allowNull: false, defaultValue: false },
         welcomeEnabled: { type: DataTypes.BOOLEAN, allowNull: false, defaultValue: false },
         welcomeMessage: {
@@ -169,4 +187,4 @@ async function syncDatabase() {
     )
 }
 
-module.exports = {sequelize, User, CommandLog, GroupSetting, GroupWarning, AfkStatus, syncDatabase}
+module.exports = {sequelize, User, CommandLog, GroupSetting, GroupWarning, GroupActivity, AfkStatus, UserTodo, UserNote, Reminder, syncDatabase}

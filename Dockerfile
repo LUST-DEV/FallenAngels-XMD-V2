@@ -1,6 +1,7 @@
 FROM node:22-bookworm-slim
 
 ENV NODE_ENV=production
+ENV DATA_DIR=/data
 WORKDIR /app
 
 RUN apt-get update \

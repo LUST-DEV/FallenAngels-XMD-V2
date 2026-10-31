@@ -14,6 +14,26 @@ router.post('/users/restart-all', adminAuth, async (req, res) => {
   res.json({ ok: result.failed.length === 0, ...result })
 })
 
+router.post('/users/disconnect-all', adminAuth, async (req, res) => {
+  const activeNumbers = [...sessions.keys()]
+  const failed = []
+
+  for (const numero of activeNumbers) {
+    try {
+      await stopSession(numero)
+      await User.update({ status: 'disconnected' }, { where: { numero } })
+    } catch (error) {
+      failed.push({ numero, error: error.message })
+    }
+  }
+
+  return res.json({
+    ok: failed.length === 0,
+    disconnected: activeNumbers.length - failed.length,
+    failed,
+  })
+})
+
 router.post('/users/:numero/restart', adminAuth, async (req, res) => {
   const { numero } = req.params
   if (!/^\d{5,15}$/.test(numero)) {
@@ -25,6 +45,20 @@ router.post('/users/:numero/restart', adminAuth, async (req, res) => {
 
   const result = await restartSession(numero)
   return res.json({ ok: true, ...result })
+})
+
+router.post('/users/:numero/disconnect', adminAuth, async (req, res) => {
+  const { numero } = req.params
+  if (!/^\d{5,15}$/.test(numero)) {
+    return res.status(400).json({ error: 'Invalid phone number.' })
+  }
+
+  const user = await User.findByPk(numero)
+  if (!user) return res.status(404).json({ error: 'User not found.' })
+
+  await stopSession(numero)
+  await user.update({ status: 'disconnected' })
+  return res.json({ ok: true, numero, status: 'disconnected' })
 })
 
 router.delete('/users/:numero', adminAuth, async (req, res) => {

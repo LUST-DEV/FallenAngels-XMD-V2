@@ -32,8 +32,18 @@ module.exports = {
         return reply('> ⚠️ Nᴏ ᴘᴀɪʀɪɴɢ ᴄᴏᴅᴇ ᴡᴀs ɢᴇɴᴇʀᴀᴛᴇᴅ. Tʜᴇ sᴇssɪᴏɴ ᴍᴀʏ ʙᴇ ʀᴇᴄᴏɴɴᴇᴄᴛɪɴɢ; ᴛʀʏ ᴀɢᴀɪɴ sʜᴏʀᴛʟʏ.')
       }
 
-      await sock.sendMessage(msg.key.remoteJid, {
-        text: `🔐 WʜᴀᴛsAᴘᴘ ᴘᴀɪʀɪɴɢ ᴄᴏᴅᴇ ғᴏʀ +${numero}:\n\n*${pairingCode}*\n\nOᴘᴇɴ WʜᴀᴛsAᴘᴘ > Lɪɴᴋᴇᴅ ᴅᴇᴠɪᴄᴇs > Lɪɴᴋ ᴡɪᴛʜ ᴘʜᴏɴᴇ ɴᴜᴍʙᴇʀ ᴀɴᴅ ᴇɴᴛᴇʀ ᴛʜɪs ᴄᴏᴅᴇ.`,
+      const { sendButtons } = await import('baileys_helpers')
+      await sendButtons(sock, msg.key.remoteJid, {
+        title: `🔐 WʜᴀᴛsAᴘᴘ ᴘᴀɪʀɪɴɢ ᴄᴏᴅᴇ ғᴏʀ +${numero}`,
+        text: `*${pairingCode}*`,
+        footer: 'Oᴘᴇɴ WʜᴀᴛsAᴘᴘ > Lɪɴᴋᴇᴅ ᴅᴇᴠɪᴄᴇs > Lɪɴᴋ ᴡɪᴛʜ ᴘʜᴏɴᴇ ɴᴜᴍʙᴇʀ ᴀɴᴅ ᴇɴᴛᴇʀ ᴛʜɪs ᴄᴏᴅᴇ.',
+        buttons: [{
+          name: 'cta_copy',
+          buttonParamsJson: JSON.stringify({
+            display_text: 'Copy pairing code',
+            copy_code: pairingCode,
+          }),
+        }],
       }, { quoted: msg })
     } catch (error) {
       logger.warn({ numero, err: error.message }, 'échec de génération du code de jumelage via WhatsApp')

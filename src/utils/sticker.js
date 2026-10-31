@@ -103,6 +103,65 @@ async function videoToSticker(buffer) {
   }
 }
 
+async function videoToGif(buffer) {
+  if (!ffmpegPath) throw new Error('FFmpeg is not available on this system.')
+
+  const workDir = await fs.mkdtemp(path.join(os.tmpdir(), 'fallen-video-gif-'))
+  const inputPath = path.join(workDir, 'input-video')
+  const outputPath = path.join(workDir, 'output.gif')
+
+  try {
+    await fs.writeFile(inputPath, buffer)
+    const errors = []
+    await new Promise((resolve, reject) => {
+      const ffmpeg = spawn(ffmpegPath, [
+        '-hide_banner',
+        '-loglevel', 'error',
+        '-y',
+        '-i', inputPath,
+        '-t', '10',
+        '-filter_complex', '[0:v]fps=12,scale=480:-1:flags=lanczos,split[a][b];[a]palettegen=stats_mode=diff[p];[b][p]paletteuse=dither=bayer',
+        '-loop', '0',
+        outputPath,
+      ], { stdio: ['ignore', 'ignore', 'pipe'] })
+
+      let timedOut = false
+      let settled = false
+      const timeout = setTimeout(() => {
+        timedOut = true
+        ffmpeg.kill()
+      }, 60_000)
+
+      ffmpeg.stderr.on('data', (chunk) => errors.push(chunk))
+      ffmpeg.on('error', (error) => {
+        if (settled) return
+        settled = true
+        clearTimeout(timeout)
+        reject(error)
+      })
+      ffmpeg.on('close', (code) => {
+        clearTimeout(timeout)
+        if (settled) return
+        settled = true
+        if (timedOut) {
+          reject(new Error('GIF conversion timed out after 60 seconds.'))
+        } else if (code !== 0) {
+          reject(new Error(`GIF conversion failed: ${Buffer.concat(errors).toString('utf8').trim()}`))
+        } else {
+          resolve()
+        }
+      })
+    })
+
+    const gif = await fs.readFile(outputPath)
+    if (gif.length === 0) throw new Error('GIF conversion produced an empty file.')
+    if (gif.length > MAX_MEDIA_BYTES) throw new Error('Converted GIF exceeds the 16 MB limit.')
+    return gif
+  } finally {
+    await fs.rm(workDir, { recursive: true, force: true })
+  }
+}
+
 async function stickerToImage(buffer) {
   if (!ffmpegPath) {
     // Fallback to sharp for static webp if ffmpeg is not available
@@ -267,4 +326,11 @@ async function stickerToVideo(buffer) {
   }
 }
 
-module.exports = { downloadQuotedMedia, imageToSticker, videoToSticker, stickerToImage, stickerToVideo }
+module.exports = {
+  downloadQuotedMedia,
+  imageToSticker,
+  videoToSticker,
+  videoToGif,
+  stickerToImage,
+  stickerToVideo,
+}

@@ -6,6 +6,24 @@ function showMessage(target, message, isError = false) {
   target.classList.toggle('error', isError)
 }
 
+async function copyText(text) {
+  if (navigator.clipboard?.writeText) {
+    await navigator.clipboard.writeText(text)
+    return
+  }
+
+  const field = document.createElement('textarea')
+  field.value = text
+  field.setAttribute('readonly', '')
+  field.style.position = 'fixed'
+  field.style.opacity = '0'
+  document.body.append(field)
+  field.select()
+  const copied = document.execCommand('copy')
+  field.remove()
+  if (!copied) throw new Error('Copy was not available')
+}
+
 pairForm.addEventListener('submit', async (event) => {
   event.preventDefault()
   const message = document.querySelector('#pair-message')
@@ -22,6 +40,7 @@ pairForm.addEventListener('submit', async (event) => {
     const result = await response.json()
     if (!response.ok) throw new Error(result.error || 'Unable to start the connection.')
 
+    message.classList.remove('error')
     message.replaceChildren()
     const detail = document.createElement('span')
     detail.textContent = result.message
@@ -38,7 +57,7 @@ pairForm.addEventListener('submit', async (event) => {
       copyButton.textContent = 'Copy code'
       copyButton.addEventListener('click', async () => {
         try {
-          await navigator.clipboard.writeText(result.pairingCode)
+          await copyText(result.pairingCode)
           copyButton.textContent = 'Code copied ✓'
           copyButton.classList.add('copied')
         } catch {
